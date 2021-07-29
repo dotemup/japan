@@ -28,7 +28,8 @@ function show-reset() {
 
 function show-connection() {
     write-host -ForegroundColor Cyan "Currently connected to: $hostname"
-    if ($username) { write-host -ForegroundColor Yellow "Selected user is: $username"}
+    if ($username) { write-host -ForegroundColor Yellow "Selected user is: $username" }
+    if ($creds) { write-host -ForegroundColor red "Credentials Entered" }
     show-spacer
 }
 
@@ -41,6 +42,11 @@ function show-collectuser() {
     show-header
     $username = (read-host -prompt "Enter Username").trim()
     clear-host
+    show-usermenu
+}
+
+function show-collectcreds() {
+    $creds = Get-Credential
     show-main
 }
 
@@ -72,6 +78,7 @@ function show-main() {
         '',
         'n - New PS Session',
         'u - User Menu',
+        'a - Enter Credentials',
         '',
         'r - Reset',
         'x - Exit'
@@ -116,6 +123,7 @@ function show-main() {
         
         'n' { invoke-newps }
         'u' { show-usermenu }
+        'a' { show-collectcreds }
 
         'r' { show-reset}
         'x' { break }
@@ -210,7 +218,7 @@ function invoke-msra() {
 }
 
 function invoke-newps() {
-    start-process powershell
+    start-process powershell (&{If($creds) {-Credential $creds}})
 }
 
 function invoke-getinfo() {
@@ -257,8 +265,8 @@ function invoke-restart() {
 
 function invoke-getusergroups() {
     if ($username) {
-        Get-ADPrincipalGroupMembership -Identity $username | Select-Object -Property GroupCategory, GroupScope, Name | Sort-Object Name | Out-GridView
-        show-anykey
+        Get-ADPrincipalGroupMembership -Identity $username | Sort-Object Name | Out-GridView
+        show-usermenu
     } else {
         write-host -ForegroundColor Magenta "You set a username first"
         show-anykey
