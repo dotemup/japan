@@ -315,19 +315,25 @@ function invoke-restart() {
 }
 
 function invoke-getusergroups() {
+
     if ($username) {
-        Get-ADPrincipalGroupMembership -Identity $username | Sort-Object Name | Out-GridView
-        show-usermenu
+        Get-ADPrincipalGroupMembership -Identity $username | Select-Object Name, GroupScope, GroupCategory, objectGUID | Sort-Object Name 
     } else {
         write-host -ForegroundColor Magenta "You set a username first"
-        show-anykey
-        show-usermenu
     }
+
+    show-anykey
+    show-usermenu
 }
 
 function invoke-showuserdetails() {
-    $userdetails = Get-ADUser -Identity $username -Properties *
-    write-host $userdetails
+
+    if ($username) {
+        net user /domain $username
+    } else {
+        write-host -ForegroundColor Magenta "You set a username first"
+    }
+
     show-anykey
     show-usermenu
 }
