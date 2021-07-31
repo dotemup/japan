@@ -17,7 +17,6 @@ function show-anykey() {
     write-host -ForegroundColor green "Press enter to continue..." -nonewline
     read-host
     clear-host
-    show-main
 }
 
 function show-connection() {
@@ -170,7 +169,8 @@ function show-hostmenu() {
 function show-usermenu() {
 
     $MenuItems = (
-        '1 - Get Usergroups',
+        '1 - Show User Details',
+        '2 - Get Usergroups',
         '',
         $(if ($username) {'r - Reset User'} else {'r - Enter Username'}),
         'x - Back'
@@ -198,7 +198,8 @@ function show-usermenu() {
 
     switch ($choice) {
 
-        '1' { invoke-getusergroups }
+        '1' { invoke-showuserdetails }
+        '2' { invoke-getusergroups }
 
         'r' { show-collectusername }
         'x' { show-main}
@@ -215,12 +216,14 @@ function invoke-ping() {
     write-host -ForegroundColor Cyan "Used powershell to ping $hostname to show machine status."
     ping -n 2 $hostname
     show-anykey
+    show-hostmenu
 }
 
 function invoke-qwinsta() {
     write-host -ForegroundColor Cyan "Used powershell to show connected users on $hostname."
     qwinsta /server:hostname
     show-anykey
+    show-hostmenu
 }
 
 function invoke-programs() {
@@ -228,18 +231,21 @@ function invoke-programs() {
     write-host -ForegroundColor Cyan "Used powershell to view installed programs on $hostname"
     invoke-command -ComputerName $hostname -scriptblock { Get-WmiObject -Class Win32_Product } | select-object -Property Name, Version | Sort-Object Name | Out-GridView
     show-anykey
+    show-hostmenu
 }
 
 function invoke-services() {
     write-host -ForegroundColor Cyan "Used powershell to open services for $hostname"
     services.msc /computer=$hostname
     show-anykey
+    show-hostmenu
 }
 
 function invoke-regedit() {
     write-host -ForegroundColor Cyan "Used powershell to open regedit for $hostname"
     regedit
     show-anykey
+    show-hostmenu
 }
 
 function invoke-pssession() {
@@ -253,6 +259,7 @@ function invoke-msra() {
     write-host -ForegroundColor Cyan "Used powershell to offer remote desktop assistance using 'msra /offerra' for $hostname"
     msra /offerra $hostname
     show-anykey
+    show-hostmenu
 }
 
 function invoke-newps() {
@@ -275,29 +282,35 @@ function invoke-getinfo() {
     write-host $productname, $version, $currentbuild
 
     show-anykey
+    show-hostmenu
 }
 
 function invoke-uptime() {
     write-host -ForegroundColor Cyan "Used powershell to get uptime of machine $hostname"
     invoke-command -ComputerName $hostname -ScriptBlock { (get-date) - (gcim win32_operatingsystem).lastbootuptime }
     show-anykey
+    show-hostmenu
 }
 
 function invoke-lock() {
     write-host -ForegroundColor Cyan "Used powershell to remotely lock workstation $hostname"
     invoke-command -ComputerName $hostname -ScriptBlock { Start-Process rundll32.exe user32.dll,LockWorkStation }
     show-anykey
+    show-hostmenu
 }
 
 function invoke-logoff() {
     write-host -ForegroundColor Cyan "Used powershell to disconnect active user of machine $hostname"
     invoke-command -ComputerName $hostname -ScriptBlock { Start-Process shutdown -l }
+    show-anykey
+    show-hostmenu
 }
 
 function invoke-restart() {
     write-host -ForegroundColor Cyan "Used powershell to restart machine $hostname with the 'Restart-Computer' command"
     invoke-command -ComputerName $hostname -ScriptBlock { Restart-Computer -Force }
     show-anykey
+    show-hostmenu
     # find a better way to do this with a break timer after x seconds if winrm is broken
 }
 
@@ -308,7 +321,15 @@ function invoke-getusergroups() {
     } else {
         write-host -ForegroundColor Magenta "You set a username first"
         show-anykey
+        show-usermenu
     }
+}
+
+function invoke-showuserdetails() {
+    $userdetails = Get-ADUser -Identity $username -Properties *
+    write-host $userdetails
+    show-anykey
+    show-usermenu
 }
 
 # ---------------------------------------
